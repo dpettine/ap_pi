@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Maintenance{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <div class="form-group col-md-12 mt-4" id="networks-div">
+            <h4 class="m-1 p-1">WiFi Networks</h4>
+
+            {% if ssid == "Mode:Master" %}
+            <p class="ml-0 mr-0 pl-0 pr-1" style="font-size:85%; padding-left:0.25rem; padding-right:0.25rem;">Device operating in <b>Access Point</b> mode.
+                <br>Select one of the available networks or configure a new one manually.</p>
+            {% endif %}
+
+            {% if networks|length > 0 %}
+
+            <table class="table table-sm" style="font-size:90%;">
+                <thead>
+                <tr>
+                    <th class="ml-0 mr-0 pl-0 pr-1" scope="col">Network</th>
+                    <th class="ml-0 mr-0 pl-1 pr-1" scope="col">Signal/Quality</th>
+                    <th class="ml-0 mr-0 pl-1 pr-1 text-center" scope="col">Encryption</th>
+                    <th class="ml-0 mr-0 pl-1 pr-0 text-center" scope="col">Status</th>
+                </tr>
+                </thead>
+                <tbody style="font-size:85%;">
+                {% for network in networks %}
+                <tr>
+                    <td class="text-muted ml-0 mr-0 pl-0 pr-1 text-left" >
+                        {% if (network['id'] == 1 or network['SSID'] == ssid) %}
+                        <input class="form-check-input ml-0" type="radio" name="networks" id="network{{network['id']}}" value="{{network['SSID']}}" checked>
+                        {% set current_enc = network['encryption_type'] %}
+                        {% else %}
+                        <input class="form-check-input ml-0" type="radio" name="networks" id="network{{network['id']}}" value="{{network['SSID']}}" >
+                        {% endif %}
+
+                        <label class="form-check-label text-muted font-weight-bold ml-3 pl-1" for="network{{network['id']}}">
+                            {{network['SSID']}}
+                        </label>
+                    </td>
+                    <td class="text-muted ml-0 mr-0 pl-1 pr-1 text-left" id="WiFi-Quality-network{{network['id']}}">
+                        {{network['signal']}} / {{network['quality']}}
+                    </td>
+                    <td class="text-muted ml-0 mr-0 pl-1 pr-1 text-center" id="WiFi-Encryption-network{{network['id']}}">
+                        {{network['encryption_type']}}
+                    </td>
+                    <td class="text-muted ml-0 mr-0 pl-1 pr-0 text-center" id="SSID-network{{network['id']}}">
+                        {% if network['SSID'] == ssid %}
+                        Connected
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+
+
+        </div>
+
+        </tbody>
+        </table>
+        {% else %}
+
+        <div class="form-group col-md-10 mt-1 mb-4" id="wifiButton-div">
+            <p class="text-muted" style="font-size:90%;"> No WiFi network available. </p>
+        </div>
+        {% endif %}
+        <h5 class="m-1 p-1">Add network manually</h5>
+        <div class="form-row align-items-center" id="wifi-manual" style="font-size:85%;">
+                <div class="col-md-5">
+                <label class="sr-only" for="wifiManual-Input"  >Add network manually</label>
+                <input type="text" class="form-control" style="font-size:90%;" id="wifiManual-Input" placeholder="Network SSID">
+                </div>
+                <div class="col-auto ml-3 pl-3">
+                <input class="form-check-input" type="checkbox" id="wifiManual-Enc">
+                <label class="form-check-label" for="wifiManual-Enc">
+                    Encrypted (WPA2/WAP)
+                </label>
+                </div>
+
+        </div>
+
+    </div>
+
+    <div class="form-group col-md-4 mt-1 mb-4" id="wifiButton-div">
+        <button type="button" id="wifiButton" name="wifiButton" class="btn btn-primary btn-lg btn-block" data-toggle="modal" data-target="#staticBackdrop">
+            Connect
+        </button>
+    </div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">WiFi Security</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="staticBackdrop-body">
+
+                {% if current_enc == "None" %}
+                <div class="form-group">
+                    <label class="text-muted" style="font-size:90%;" id="WiFi-label" for="WiFi-password">You are connecting to an unsecured WiFi network.
+                        Please consider setting wireless security on your access point !</label>
+                    <input type="password" class="form-control" id="WiFi-password" placeholder="Password" style="display:none;">
+                </div>
+                <div class="form-check" id="WiFi-pwd-umask-div" style="display:none;">
+                    <input type="checkbox" class="form-check-input" id="WiFi-password-unmask">
+                    <label class="form-check-label text-muted" for="WiFi-password-unmask" style="font-size:90%;">Show Password/Passphrase</label>
+                </div>
+                {% else %}
+                <div class="form-group">
+                    <label class="text-muted" style="font-size:90%;" id="WiFi-label" for="WiFi-password">Please provide the WiFi Password/Passphrase</label>
+                    <input type="password" class="form-control" id="WiFi-password" placeholder="Password" style="display:block;">
+                </div>
+                <div class="form-check" id="WiFi-pwd-umask-div" style="display:block;">
+                    <input type="checkbox" class="form-check-input" id="WiFi-password-unmask">
+                    <label class="form-check-label text-muted" for="WiFi-password-unmask" style="font-size:90%;">Show Password/Passphrase</label>
+                </div>
+                {% endif %}
+
+            </div>
+            <div class="modal-footer">
+                <div class="spinner-grow text-primary float-left" id="wifi-Button-spin" role="status" style="display:none;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <button type="button" class="btn btn-secondary" id="wifi-modal-close" data-dismiss="modal">Close</button>
+                <button type="button" id="wifi-passphrase-Button" class="btn btn-primary">Connect</button>
+            </div>
+        </div>
+    </div>
+</div>
+    {% endblock %}
