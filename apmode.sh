@@ -93,7 +93,7 @@ if [[ $AP != "" ]] && [[ $SSID != "" ]]; then
 	done	
 fi
 
-IP_WLAN=`cat $DIR/static/wifi-ini.py | grep WLAN0_PRIVATE_IP`
+IP_WLAN=`cat $DIR/static/wifi-ini.py | grep WLAN0_STATIC_IP`
 IFS='/"' read -ra TOKS <<< "$IP_WLAN"
 IP="${TOKS[1]}"
 echo "The configured static IP for wlan0 is "$IP

@@ -15,69 +15,6 @@ app = Flask(__name__)
 app.config.from_pyfile('static/wifi-ini.py', silent=True)
 
 
-@app.route('/wifi')
-def maintenance():
-    active_ssid = get_active_wifi(retry=False)
-
-    cells = get_networks()
-
-    return render_template('maintenance.html', networks=render_networks(cells), ssid=active_ssid)
-
-
-def signal_stregth( power ):
-    if power in range(-1000, -85):
-        return 'poor'
-    if power in range(-85, -75):
-        return 'low'
-    if power in range(-75, -60):
-        return 'fair'
-    if power in range(-60, -50):
-        return 'good'
-    if power in range(-50, 1):
-        return 'excellent'
-
-
-def signal_quality( quality ):
-    if quality in range(10):
-        return 'unusable'
-    if quality in range(10, 35):
-        return 'low'
-    if quality in range(35, 50):
-        return 'medium'
-    if quality in range(50, 75):
-        return 'good'
-    if quality in range(75, 101):
-        return 'high'
-
-
-def render_networks(cells):
-    networks = []
-    ssids = []
-
-    i = 1
-
-    for cell in cells:
-
-        #print("Wifi Net: ", cell['essid'], " Strength ", cell['signal'])
-
-        if cell['essid'] not in ssids:
-            quality_num = cell['quality'].split("/")
-            quality_score = int(int(quality_num[0]) / int(quality_num[1]) * 100)
-
-            networks.append({
-                'id': i,
-                'SSID': cell['essid'],
-                'signal': signal_stregth(int(cell['signal'])) + " (" + str(cell['signal']) + "db)",
-                'quality': signal_quality(quality_score) + " (" + str(quality_score) + "%)",
-                'encrypted': cell['encryption'],
-                'encryption_type': cell['enc_type'],
-            })
-            ssids.append(cell['essid'])
-            i += 1
-
-    return networks
-
-
 def get_networks():
     p = subprocess.run(["sudo", "iwlist", "wlan0", "scan"],
                        stdout=subprocess.PIPE,
@@ -118,6 +55,34 @@ def get_networks():
             networks.append(new_record)
             # print("The new record ", new_record)
             record = False
+
+    return networks
+
+
+def render_networks(cells):
+    networks = []
+    ssids = []
+
+    i = 1
+
+    for cell in cells:
+
+        #print("Wifi Net: ", cell['essid'], " Strength ", cell['signal'])
+
+        if cell['essid'] not in ssids:
+            quality_num = cell['quality'].split("/")
+            quality_score = int(int(quality_num[0]) / int(quality_num[1]) * 100)
+
+            networks.append({
+                'id': i,
+                'SSID': cell['essid'],
+                'signal': signal_stregth(int(cell['signal'])) + " (" + str(cell['signal']) + "db)",
+                'quality': signal_quality(quality_score) + " (" + str(quality_score) + "%)",
+                'encrypted': cell['encryption'],
+                'encryption_type': cell['enc_type'],
+            })
+            ssids.append(cell['essid'])
+            i += 1
 
     return networks
 
@@ -197,6 +162,32 @@ def get_service_status(service):
         return False
 
 
+def signal_stregth( power ):
+    if power in range(-1000, -85):
+        return 'poor'
+    if power in range(-85, -75):
+        return 'low'
+    if power in range(-75, -60):
+        return 'fair'
+    if power in range(-60, -50):
+        return 'good'
+    if power in range(-50, 1):
+        return 'excellent'
+
+
+def signal_quality( quality ):
+    if quality in range(10):
+        return 'unusable'
+    if quality in range(10, 35):
+        return 'low'
+    if quality in range(35, 50):
+        return 'medium'
+    if quality in range(50, 75):
+        return 'good'
+    if quality in range(75, 101):
+        return 'high'
+
+
 def create_local_supplicant(ssid,passkey):
     outfile = open('static/wpa_supplicant.conf', 'w')
 
@@ -222,7 +213,7 @@ def wifi_rollback(old_ssid=None):
             )
 
             p = subprocess.run(
-                ["sudo", "ifconfig", "wlan0", current_app.config['WLAN0_PRIVATE_IP']],
+                ["sudo", "ifconfig", "wlan0", current_app.config['WLAN0_STATIC_IP']],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -481,6 +472,13 @@ def wifi_connect(ssid=None, passkey=None):
 
     else:
         return response
+
+
+@app.route('/wifi')
+def maintenance():
+    active_ssid = get_active_wifi(retry=False)
+    cells = get_networks()
+    return render_template('maintenance.html', networks=render_networks(cells), ssid=active_ssid)
 
 
 def run_app():
